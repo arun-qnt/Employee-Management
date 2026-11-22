@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Employee Management &amp; Field Work Tracking System</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/employee.css" />
+  <link rel="stylesheet" href="css/admin.css" />
+</head>
+<body>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <!-- Loading Indicator Overlay -->
+  <div id="loading-overlay" class="loading-overlay hidden" role="status" aria-live="assertive">
+    <div class="spinner"></div>
+    <div id="loading-overlay-text" class="loading-text">Processing...</div>
+  </div>
+
+  <!-- =====================================================================
+       1. AUTHENTICATION SCREEN (Single Login Page)
+       ===================================================================== -->
+  <main id="view-auth" class="auth-wrapper">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="auth-logo">EM</div>
+        <h1 class="auth-title">Employee &amp; Field Tracker</h1>
+        <p class="auth-subtitle">Enter your registered mobile number to sign in</p>
+      </div>
+
+      <div id="login-error-alert" class="alert alert-danger hidden" role="alert">
+        <span id="login-error-text"></span>
+      </div>
+
+      <div id="login-access-indicator" class="access-indicator hidden">
+        <span id="login-access-text"></span>
+      </div>
+
+      <form id="login-form" novalidate>
+        <div class="form-group">
+          <label for="login-mobile" class="form-label">
+            Mobile Number <span class="required">*</span>
+          </label>
+          <input
+            type="tel"
+            id="login-mobile"
+            class="form-control"
+            placeholder="Enter 10-digit mobile number"
+            maxlength="10"
+            inputmode="numeric"
+            autocomplete="tel"
+            required
+          />
+          <div class="form-hint">Employees sign in directly with mobile number.</div>
+        </div>
+
+        <!-- Visible ONLY for admin access_type -->
+        <div id="login-password-group" class="form-group hidden">
+          <label for="login-password" class="form-label">
+            Administrator Password <span class="required">*</span>
+          </label>
+          <input
+            type="password"
+            id="login-password"
+            class="form-control"
+            placeholder="Enter administrator password"
+            autocomplete="current-password"
+          />
+        </div>
+
+        <button type="submit" id="btn-login-submit" class="btn btn-primary btn-lg btn-block">
+          Sign In
+        </button>
+      </form>
+
+      <!-- Discreet Demo Credentials Box for Prototype Testing -->
+      <div class="demo-credentials-box">
+        <div class="demo-credentials-title">
+          <span>Demo Test Credentials</span>
+          <span style="font-weight: 400; font-size: 0.72rem;">Click to autofill</span>
+        </div>
+        <div class="demo-cred-grid">
+          <div id="demo-fill-employee" class="demo-cred-item" role="button" tabindex="0">
+            <span class="demo-cred-role">Employee</span>
+            <div>Arun Kumar</div>
+            <div>Mobile: <strong>9876543210</strong></div>
+          </div>
+          <div id="demo-fill-admin" class="demo-cred-item" role="button" tabindex="0">
+            <span class="demo-cred-role">Admin</span>
+            <div>Mobile: <strong>9999999999</strong></div>
+            <div>Pass: <strong>Admin@123</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- =====================================================================
+       2. EMPLOYEE APPLICATION PORTAL
+       ===================================================================== -->
+  <div id="view-employee-portal" class="hidden">
+    <header class="app-topbar">
+      <div class="brand-group">
+        <div class="brand-logo">EM</div>
+        <div>
+          <span class="brand-title">Field Work Portal</span>
+          <span class="brand-subtitle">Employee Application</span>
+        </div>
+      </div>
+      <div class="employee-header-meta">
+        <span id="emp-topbar-user" class="badge badge-info">Arun Kumar</span>
+      </div>
+    </header>
+
+    <main class="employee-container">
+      <!-- Screen 1: Attendance Check-In -->
+      <section id="emp-screen-checkin" class="card checkin-card hidden">
+        <div id="checkin-emp-avatar" class="checkin-avatar">AK</div>
+        <h2 id="checkin-emp-name" style="font-size: 1.35rem; margin-bottom: 0.25rem;">Arun Kumar</h2>
+        <p style="font-size: 0.875rem; margin-bottom: 1rem;">
+          Please complete your daily attendance check-in to access your dashboard and submit field work.
+        </p>
+
+        <div class="checkin-meta-grid">
+          <div class="checkin-meta-item">
+            <span class="checkin-meta-label">Current Date (IST)</span>
+            <span id="checkin-current-date" class="checkin-meta-value">—</span>
+          </div>
+          <div class="checkin-meta-item">
+            <span class="checkin-meta-label">Current Time (IST)</span>
+            <span id="checkin-current-time" class="checkin-meta-value">—</span>
+          </div>
+        </div>
+
+        <div id="checkin-gps-status" class="gps-status-box">
+          <strong>Location Capture Status:</strong> Ready to capture GPS coordinates.
+        </div>
+
+        <button type="button" id="btn-employee-checkin" class="btn btn-primary btn-lg btn-block" style="margin-bottom: 0.75rem;">
+          Check In
+        </button>
+
+        <button type="button" id="btn-checkin-signout" class="btn btn-outline btn-sm">
+          Return to Login
+        </button>
+      </section>
+
+      <!-- Screen 2: Employee Dashboard -->
+      <section id="emp-screen-dashboard" class="hidden">
+        <div class="welcome-banner">
+          <div class="welcome-greeting">Welcome back</div>
+          <h2 id="emp-dash-name" class="welcome-name">Arun Kumar</h2>
+
+          <div class="attendance-summary-strip">
+            <div>
+              <span class="strip-item-label">Current Date</span>
+              <span id="emp-dash-date" class="strip-item-value">—</span>
+            </div>
+            <div>
+              <span class="strip-item-label">Check-In Time</span>
+              <span id="emp-dash-checkin-time" class="strip-item-value">—</span>
+            </div>
+            <div>
+              <span class="strip-item-label">Attendance Status</span>
+              <div id="emp-dash-status" style="margin-top: 0.15rem;">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="emp-completed-attendance-banner" class="alert alert-warning hidden"></div>
+
+        <!-- Primary 3 Dashboard Tiles -->
+        <div class="dashboard-tiles-grid">
+          <div id="tile-emp-profile" class="dashboard-tile" role="button" tabindex="0">
+            <div class="tile-icon-wrap">
+              <img src="assets/icons/user.svg" alt="Profile" />
+            </div>
+            <div class="tile-title">Profile</div>
+            <div class="tile-subtitle">View salary, advances &amp; role</div>
+          </div>
+
+          <div id="tile-emp-work" class="dashboard-tile" role="button" tabindex="0">
+            <div class="tile-icon-wrap">
+              <img src="assets/icons/work.svg" alt="Work Entry" />
+            </div>
+            <div class="tile-title">Work Entry</div>
+            <div id="tile-emp-work-subtitle" class="tile-subtitle">Log GPS, photo &amp; field work</div>
+          </div>
+
+          <div id="tile-emp-logout" class="dashboard-tile tile-logout" role="button" tabindex="0">
+            <div class="tile-icon-wrap">
+              <img src="assets/icons/logout.svg" alt="Logout" />
+            </div>
+            <div id="tile-emp-logout-title" class="tile-title">Logout</div>
+            <div id="tile-emp-logout-subtitle" class="tile-subtitle">Check-out GPS &amp; sign out</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 3: Employee Profile (Read-Only) -->
+      <section id="emp-screen-profile" class="hidden">
+        <div class="screen-nav-bar">
+          <div>
+            <h2 style="font-size: 1.2rem;">Employee Profile</h2>
+            <p style="font-size: 0.82rem;">Read-only employment &amp; compensation record</p>
+          </div>
+          <button type="button" id="btn-emp-profile-back" class="btn btn-outline btn-sm">
+            &larr; Back to Dashboard
+          </button>
+        </div>
+
+        <div class="card">
+          <div id="emp-profile-readonly-grid" class="profile-readonly-grid"></div>
+        </div>
+      </section>
+
+      <!-- Screen 4: Work Entry -->
+      <section id="emp-screen-work" class="hidden">
+        <div class="screen-nav-bar">
+          <div>
+            <h2 style="font-size: 1.2rem;">Field Work Entry</h2>
+            <p style="font-size: 0.82rem;">Capture site location, verification image &amp; work report</p>
+          </div>
+          <button type="button" id="btn-emp-work-back" class="btn btn-outline btn-sm">
+            &larr; Back to Dashboard
+          </button>
+        </div>
+
+        <div id="work-entry-locked-banner" class="alert alert-warning hidden"></div>
+
+        <div id="work-entry-form-card" class="card" style="margin-bottom: 1.25rem;">
+          <div class="card-header">
+            <h3 class="card-title">New Work Submission</h3>
+            <span class="badge badge-info">Multiple entries allowed per day</span>
+          </div>
+
+          <form id="work-entry-form" novalidate>
+            <!-- A. Location Section -->
+            <div class="work-section-box">
+              <div class="work-section-header">
+                <span class="work-section-title">A. Field Site Location <span class="required" style="color: var(--danger);">*</span></span>
+                <button type="button" id="btn-work-capture-location" class="btn btn-primary-soft btn-sm">
+                  <img src="assets/icons/location.svg" alt="" style="width: 15px; height: 15px;" />
+                  Current Location
+                </button>
+              </div>
+              <div id="work-location-status" class="gps-status-box" style="margin-bottom: 0;">
+                Click <strong>Current Location</strong> to capture your field work coordinates.
+              </div>
+            </div>
+
+            <!-- B. Image Section (Multiple Images Supported) -->
+            <div class="work-section-box">
+              <div class="work-section-header">
+                <span class="work-section-title">B. Site Verification Images <span class="required" style="color: var(--danger);">*</span></span>
+                <span id="work-images-count-badge" class="badge badge-info">0 Photos</span>
+              </div>
+
+              <input
+                type="file"
+                id="work-image-file"
+                class="hidden"
+                accept="image/*"
+                capture="environment"
+                multiple
+              />
+
+              <div id="work-camera-picker" class="camera-picker-box" role="button" tabindex="0">
+                <div class="camera-icon-circle">
+                  <img src="assets/icons/camera.svg" alt="Camera" />
+                </div>
+                <div style="font-weight: 600; font-size: 0.92rem; color: var(--text-main);">
+                  Tap Camera Icon to Capture / Select One or Multiple Photos
+                </div>
+                <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.2rem;">
+                  You can select multiple photos at once or add more photos one by one
+                </div>
+                <div style="margin-top: 0.75rem;">
+                  <button type="button" id="btn-work-sample-image" class="btn btn-outline btn-sm">
+                    + Add Sample Field Photo (Prototype Test)
+                  </button>
+                </div>
+              </div>
+
+              <div id="work-image-preview-wrap" class="image-preview-container hidden">
+                <div id="work-images-preview-grid" class="multi-images-grid"></div>
+                <div class="image-preview-actions" style="justify-content: space-between; flex-wrap: wrap; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color);">
+                  <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <button type="button" id="btn-work-add-more-images" class="btn btn-primary-soft btn-sm">
+                      + Add More Photos
+                    </button>
+                    <button type="button" id="btn-work-add-sample-more" class="btn btn-outline btn-sm">
+                      + Add Sample Photo
+                    </button>
+                  </div>
+                  <button type="button" id="btn-work-remove-image" class="btn btn-danger-outline btn-sm">
+                    Remove All
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- C. Work Description Section -->
+            <div class="form-group">
+              <label for="work-description-input" class="form-label">
+                C. Work Description <span class="required">*</span>
+              </label>
+              <textarea
+                id="work-description-input"
+                class="form-control"
+                placeholder="Describe the field work, client visit, or task completed..."
+                required
+              ></textarea>
+            </div>
+
+            <!-- D. Submit Work Entry -->
+            <button type="submit" id="btn-submit-work-entry" class="btn btn-primary btn-lg btn-block">
+              Submit Work Entry
+            </button>
+          </form>
+        </div>
+
+        <!-- Previously Submitted Work Entries -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Previously Submitted Work Entries</h3>
+            <span id="employee-work-history-count" class="badge badge-info">0 Entries</span>
+          </div>
+          <div id="employee-work-history-list" class="work-history-list"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- =====================================================================
+       3. ADMIN APPLICATION PORTAL
+       ===================================================================== -->
+  <div id="view-admin-portal" class="hidden">
+    <header class="app-topbar">
+      <div class="brand-group">
+        <div class="brand-logo">EM</div>
+        <div>
+          <span class="brand-title">Admin Control Center</span>
+          <span class="brand-subtitle">Employee Management &amp; Field Operations</span>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 0.65rem;">
+        <span id="admin-topbar-user" class="badge badge-info">Admin</span>
+        <button
+          type="button"
+          id="btn-admin-topbar-reset"
+          class="btn btn-danger-outline btn-sm"
+          title="Clear all LocalStorage data and reset application to default demo state"
+        >
+          Reset App Data
+        </button>
+      </div>
+    </header>
+
+    <div class="admin-shell">
+      <aside class="admin-sidebar">
+        <nav aria-label="Admin Navigation">
+          <ul class="admin-nav-list">
+            <li>
+              <button type="button" class="admin-nav-btn active" data-admin-nav="dashboard">
+                Dashboard
+              </button>
+            </li>
+            <li>
+              <button type="button" class="admin-nav-btn" data-admin-nav="employees">
+                Employees
+              </button>
+            </li>
+            <li>
+              <button type="button" class="admin-nav-btn" data-admin-nav="attendance">
+                Attendance
+              </button>
+            </li>
+            <li>
+              <button type="button" class="admin-nav-btn" data-admin-nav="work">
+                Work Entries
+              </button>
+            </li>
+            <li>
+              <button type="button" class="admin-nav-btn" data-admin-nav="advances">
+                Advances
+              </button>
+            </li>
+            <li>
+              <button type="button" class="admin-nav-btn nav-logout" data-admin-nav="reset-storage">
+                Clear LocalStorage
+              </button>
+            </li>
+            <li>
+              <button type="button" class="admin-nav-btn nav-logout" data-admin-nav="logout">
+                Logout
+              </button>
+            </li>
+          </ul>
+        </nav>
+      </aside>
+
+      <main class="admin-main">
+        <!-- Admin View 1: Dashboard -->
+        <section id="admin-view-dashboard">
+          <div class="admin-page-header">
+            <div>
+              <h1 class="admin-page-title">Admin Dashboard</h1>
+              <p class="admin-page-subtitle">Real-time summary of workforce attendance, field work &amp; advances</p>
+            </div>
+            <button
+              type="button"
+              id="btn-admin-reset-storage"
+              class="btn btn-danger-outline btn-sm"
+            >
+              Clear LocalStorage &amp; Reset App
+            </button>
+          </div>
+
+          <div class="summary-cards-grid">
+            <div class="summary-card">
+              <span class="summary-card-label">Total Employees</span>
+              <span id="stat-total-employees" class="summary-card-value">0</span>
+              <span class="summary-card-foot">Registered employee accounts</span>
+            </div>
+            <div class="summary-card">
+              <span class="summary-card-label">Employees Present Today</span>
+              <span id="stat-present-today" class="summary-card-value">0</span>
+              <span class="summary-card-foot">Checked in for current date</span>
+            </div>
+            <div class="summary-card">
+              <span class="summary-card-label">Employees Not Checked Out</span>
+              <span id="stat-not-checked-out" class="summary-card-value">0</span>
+              <span class="summary-card-foot">Currently active on field shift</span>
+            </div>
+            <div class="summary-card">
+              <span class="summary-card-label">Pending Attendance Approvals</span>
+              <span id="stat-pending-attendance" class="summary-card-value">0</span>
+              <span class="summary-card-foot">Awaiting admin review</span>
+            </div>
+            <div class="summary-card">
+              <span class="summary-card-label">Pending Work Approvals</span>
+              <span id="stat-pending-work" class="summary-card-value">0</span>
+              <span class="summary-card-foot">Field work sheets awaiting review</span>
+            </div>
+            <div class="summary-card">
+              <span class="summary-card-label">Total Advances</span>
+              <span id="stat-total-advances" class="summary-card-value">₹0</span>
+              <span class="summary-card-foot">Active salary advances across staff</span>
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Recent Attendance Activity</h3>
+              </div>
+              <div class="table-responsive" style="border: none; box-shadow: none;">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Employee</th>
+                      <th>Date</th>
+                      <th>Check In</th>
+                      <th>Check Out</th>
+                      <th>Approval</th>
+                    </tr>
+                  </thead>
+                  <tbody id="admin-dash-recent-att-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Recent Work Submissions</h3>
+              </div>
+              <div class="table-responsive" style="border: none; box-shadow: none;">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Employee</th>
+                      <th>Date</th>
+                      <th>Description</th>
+                      <th>Approval</th>
+                    </tr>
+                  </thead>
+                  <tbody id="admin-dash-recent-work-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Admin View 2: Employee Management -->
+        <section id="admin-view-employees" class="hidden">
+          <div class="admin-page-header">
+            <div>
+              <h1 class="admin-page-title">Employee Management</h1>
+              <p class="admin-page-subtitle">Add, edit, search and manage active status of employees</p>
+            </div>
+            <button type="button" id="btn-admin-open-add-emp" class="btn btn-primary">
+              + Add Employee
+            </button>
+          </div>
+
+          <div class="filter-toolbar">
+            <div class="filter-group">
+              <input
+                type="search"
+                id="admin-emp-search"
+                class="form-control"
+                placeholder="Search by employee name or mobile..."
+              />
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Name &amp; Role</th>
+                  <th>Mobile</th>
+                  <th>Access Type</th>
+                  <th>Salary</th>
+                  <th>OT Salary</th>
+                  <th>Total Advances</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admin-employees-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Admin View 3: Attendance Management -->
+        <section id="admin-view-attendance" class="hidden">
+          <div class="admin-page-header">
+            <div>
+              <h1 class="admin-page-title">Attendance Management</h1>
+              <p class="admin-page-subtitle">Review GPS check-in/out logs, working duration &amp; approve attendance</p>
+            </div>
+          </div>
+
+          <div class="filter-toolbar">
+            <div class="filter-group">
+              <input
+                type="search"
+                id="admin-att-search"
+                class="form-control"
+                placeholder="Search employee name or mobile..."
+              />
+              <input
+                type="date"
+                id="admin-att-date-filter"
+                class="form-control"
+                aria-label="Filter by attendance date"
+              />
+              <button type="button" id="btn-admin-att-today" class="btn btn-outline btn-sm">
+                Today
+              </button>
+              <button type="button" id="btn-admin-att-clear-date" class="btn btn-outline btn-sm">
+                All Dates
+              </button>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Employee</th>
+                  <th>Date</th>
+                  <th>Check-In &amp; GPS</th>
+                  <th>Check-Out &amp; GPS</th>
+                  <th>Duration</th>
+                  <th>Approval Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admin-attendance-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Admin View 4: Work Entry Management -->
+        <section id="admin-view-work" class="hidden">
+          <div class="admin-page-header">
+            <div>
+              <h1 class="admin-page-title">Work Entry Management</h1>
+              <p class="admin-page-subtitle">Inspect field work descriptions, GPS coordinates, site photos &amp; approvals</p>
+            </div>
+          </div>
+
+          <div class="filter-toolbar">
+            <div class="filter-group">
+              <input
+                type="search"
+                id="admin-work-search"
+                class="form-control"
+                placeholder="Search employee or work description..."
+              />
+              <select id="admin-work-status-filter" class="form-control" style="max-width: 190px;">
+                <option value="">All Statuses</option>
+                <option value="Pending">Pending</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Employee</th>
+                  <th>Work Date</th>
+                  <th>Description</th>
+                  <th>GPS Coordinates</th>
+                  <th>Photo</th>
+                  <th>Approval Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admin-work-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Admin View 5: Advance Management -->
+        <section id="admin-view-advances" class="hidden">
+          <div class="admin-page-header">
+            <div>
+              <h1 class="admin-page-title">Advance Management</h1>
+              <p class="admin-page-subtitle">Record employee salary advances and track active advance balances</p>
+            </div>
+          </div>
+
+          <div class="advances-grid">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Add Advance Transaction</h3>
+              </div>
+
+              <form id="admin-advance-form" novalidate>
+                <div class="form-group">
+                  <label for="advance-employee-select" class="form-label">
+                    Select Employee <span class="required">*</span>
+                  </label>
+                  <select id="advance-employee-select" class="form-control" required></select>
+                </div>
+
+                <div id="advance-selected-emp-summary" class="alert alert-info hidden"></div>
+
+                <div class="form-group">
+                  <label for="advance-amount-input" class="form-label">
+                    Advance Amount (INR) <span class="required">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    id="advance-amount-input"
+                    class="form-control"
+                    placeholder="e.g. 5000"
+                    min="1"
+                    step="1"
+                    required
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="advance-date-input" class="form-label">
+                    Transaction Date <span class="required">*</span>
+                  </label>
+                  <input type="date" id="advance-date-input" class="form-control" required />
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">
+                  Add Advance Transaction
+                </button>
+              </form>
+            </div>
+
+            <div>
+              <div class="filter-toolbar">
+                <div class="filter-group">
+                  <label for="advance-history-emp-filter" style="font-size: 0.85rem; font-weight: 600;">
+                    Filter Employee:
+                  </label>
+                  <select id="advance-history-emp-filter" class="form-control"></select>
+                </div>
+                <div>
+                  <span id="admin-advances-filtered-total" class="badge badge-info" style="font-size: 0.85rem;">
+                    Total Active Advances: ₹0
+                  </span>
+                </div>
+              </div>
+
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Employee</th>
+                      <th>Date</th>
+                      <th>Advance Amount</th>
+                      <th>Employee Active Total</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="admin-advances-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       4. MODALS & DIALOGS
+       ===================================================================== -->
+
+  <!-- Add / Edit Employee Modal -->
+  <div id="employee-form-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="employee-form-modal-title" class="modal-title">Add New Employee</h3>
+        <button type="button" class="modal-close-btn" data-close-emp-modal aria-label="Close">&times;</button>
+      </div>
+      <form id="admin-employee-form" novalidate>
+        <div class="modal-body">
+          <input type="hidden" id="emp-form-id" />
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="emp-form-name" class="form-label">Name <span class="required">*</span></label>
+              <input type="text" id="emp-form-name" class="form-control" placeholder="Full Name" required />
+            </div>
+
+            <div class="form-group">
+              <label for="emp-form-mobile" class="form-label">Mobile <span class="required">*</span></label>
+              <input
+                type="tel"
+                id="emp-form-mobile"
+                class="form-control"
+                placeholder="10-digit mobile"
+                maxlength="10"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="emp-form-role" class="form-label">Role <span class="required">*</span></label>
+              <input type="text" id="emp-form-role" class="form-control" placeholder="e.g. Field Executive" required />
+            </div>
+
+            <div class="form-group">
+              <label for="emp-form-access-type" class="form-label">Access Type <span class="required">*</span></label>
+              <select id="emp-form-access-type" class="form-control">
+                <option value="employee">Employee</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="emp-form-password-group" class="form-group hidden">
+            <label for="emp-form-password" class="form-label">
+              Admin Demo Password <span class="required">*</span>
+            </label>
+            <input
+              type="text"
+              id="emp-form-password"
+              class="form-control"
+              placeholder="Enter password for admin login"
+            />
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="emp-form-salary" class="form-label">Monthly Salary (INR) <span class="required">*</span></label>
+              <input type="number" id="emp-form-salary" class="form-control" min="0" required />
+            </div>
+
+            <div class="form-group">
+              <label for="emp-form-ot-salary" class="form-label">OT Salary / Hr (INR) <span class="required">*</span></label>
+              <input type="number" id="emp-form-ot-salary" class="form-control" min="0" required />
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="emp-form-work-hours" class="form-label">Working Hours / Day <span class="required">*</span></label>
+              <input type="number" id="emp-form-work-hours" class="form-control" min="1" max="24" required />
+            </div>
+
+            <div class="form-group">
+              <label for="emp-form-is-active" class="form-label">Active Status</label>
+              <select id="emp-form-is-active" class="form-control">
+                <option value="true">Active</option>
+                <option value="false">Inactive</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" data-close-emp-modal>Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Employee</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- View Employee Profile Modal (Admin) -->
+  <div id="employee-view-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="employee-view-modal-title" class="modal-title">Employee Profile</h3>
+        <button type="button" class="modal-close-btn" data-close-profile-modal aria-label="Close">&times;</button>
+      </div>
+      <div id="employee-view-modal-body" class="modal-body"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-close-profile-modal>Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image Preview Modal (Supports Multi-Image Gallery) -->
+  <div id="image-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal-dialog" style="max-width: 680px;">
+      <div class="modal-header">
+        <h3 id="image-modal-title" class="modal-title">Work Entry Image</h3>
+        <button type="button" class="modal-close-btn" data-close-image-modal aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body" style="text-align: center;">
+        <div id="image-modal-counter" class="badge badge-info hidden" style="margin-bottom: 0.65rem;">
+          Photo 1 of 1
+        </div>
+        <div>
+          <img
+            id="image-modal-img"
+            src=""
+            alt="Work Verification Full Preview"
+            style="max-width: 100%; max-height: 62vh; border-radius: var(--radius-sm); border: 1px solid var(--border-color);"
+          />
+        </div>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-top: 0.75rem;">
+          <button type="button" id="image-modal-prev" class="btn btn-outline btn-sm hidden">&larr; Previous</button>
+          <button type="button" id="image-modal-next" class="btn btn-outline btn-sm hidden">Next &rarr;</button>
+        </div>
+        <div id="image-modal-thumbs" class="modal-gallery-thumbs hidden"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" data-close-image-modal>Close Preview</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmation Dialog Modal -->
+  <div id="confirm-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal-dialog" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3 id="confirm-modal-title" class="modal-title">Confirm Action</h3>
+        <button type="button" id="confirm-modal-close" class="modal-close-btn" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="confirm-modal-message" style="color: var(--text-main); font-size: 0.925rem; white-space: pre-line;"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="confirm-modal-cancel" class="btn btn-outline">Cancel</button>
+        <button type="button" id="confirm-modal-accept" class="btn btn-primary">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Scripts -->
+  <script src="js/utils.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/attendance.js"></script>
+  <script src="js/work-entry.js"></script>
+  <script src="js/employee.js"></script>
+  <script src="js/advances.js"></script>
+  <script src="js/admin.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
